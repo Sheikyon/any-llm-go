@@ -41,6 +41,7 @@ type CompletionParams struct {
 	MaxTokens         *int            `json:"max_tokens,omitempty"`
 	Stop              []string        `json:"stop,omitempty"`
 	Stream            bool            `json:"stream,omitempty"`
+	StreamOptions     *StreamOptions  `json:"stream_options,omitempty"`
 	Tools             []Tool          `json:"tools,omitempty"`
 	ToolChoice        any             `json:"tool_choice,omitempty"` // string or ToolChoice
 	ParallelToolCalls *bool           `json:"parallel_tool_calls,omitempty"`
@@ -49,6 +50,11 @@ type CompletionParams struct {
 	Seed              *int            `json:"seed,omitempty"`
 	User              string          `json:"user,omitempty"`
 	Extra             map[string]any  `json:"-"` // Provider-specific extra parameters
+}
+
+// StreamOptions contains options for streaming responses.
+type StreamOptions struct {
+	IncludeUsage bool `json:"include_usage,omitempty"`
 }
 
 // Message represents a chat message in OpenAI format.

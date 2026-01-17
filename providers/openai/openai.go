@@ -210,6 +210,12 @@ func convertParams(params anyllm.CompletionParams) openai.ChatCompletionNewParam
 		req.ReasoningEffort = shared.ReasoningEffort(params.ReasoningEffort)
 	}
 
+	if params.StreamOptions != nil && params.StreamOptions.IncludeUsage {
+		req.StreamOptions = openai.ChatCompletionStreamOptionsParam{
+			IncludeUsage: openai.Bool(true),
+		}
+	}
+
 	return req
 }
 
