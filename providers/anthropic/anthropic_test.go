@@ -2,6 +2,7 @@ package anthropic
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"net/http"
 	"net/url"
@@ -522,6 +523,163 @@ func TestConvertToolCall(t *testing.T) {
 	}
 }
 
+func TestConvertTool(t *testing.T) {
+	t.Parallel()
+
+	t.Run("converts tool with properties and required fields", func(t *testing.T) {
+		t.Parallel()
+
+		tool := testutil.WeatherTool()
+		result, err := convertTool(tool)
+
+		require.NoError(t, err)
+		require.NotNil(t, result.OfTool)
+		require.Equal(t, "get_weather", result.OfTool.Name)
+		require.Equal(t, "Get the current weather for a location.", result.OfTool.Description.Value)
+		require.Equal(t, "object", string(result.OfTool.InputSchema.Type))
+
+		// Verify properties are preserved.
+		props, ok := result.OfTool.InputSchema.Properties.(map[string]any)
+		require.True(t, ok, "properties should be a map")
+		require.Contains(t, props, "location")
+
+		locationProp, ok := props["location"].(map[string]any)
+		require.True(t, ok, "location property should be a map")
+		require.Equal(t, "string", locationProp["type"])
+		require.Equal(t, "The city name, e.g. 'Paris, France'", locationProp["description"])
+
+		// Verify required fields are preserved.
+		require.Contains(t, result.OfTool.InputSchema.Required, "location")
+	})
+
+	t.Run("converts tool with multiple parameters", func(t *testing.T) {
+		t.Parallel()
+
+		tool := testutil.NewTestCalculatorTool(t)
+		result, err := convertTool(tool)
+
+		require.NoError(t, err)
+		require.NotNil(t, result.OfTool)
+		require.Equal(t, "calculate", result.OfTool.Name)
+		require.Equal(t, "object", string(result.OfTool.InputSchema.Type))
+
+		// Verify all properties are preserved.
+		props, ok := result.OfTool.InputSchema.Properties.(map[string]any)
+		require.True(t, ok, "properties should be a map")
+		require.Contains(t, props, "a")
+		require.Contains(t, props, "b")
+		require.Contains(t, props, "operation")
+
+		// Verify property types.
+		aProp, ok := props["a"].(map[string]any)
+		require.True(t, ok)
+		require.Equal(t, "number", aProp["type"])
+
+		bProp, ok := props["b"].(map[string]any)
+		require.True(t, ok)
+		require.Equal(t, "number", bProp["type"])
+
+		opProp, ok := props["operation"].(map[string]any)
+		require.True(t, ok)
+		require.Equal(t, "string", opProp["type"])
+
+		// Verify enum values are preserved.
+		enum, ok := opProp["enum"].([]string)
+		require.True(t, ok, "enum should be a string slice")
+		require.ElementsMatch(t, []string{"add", "subtract", "multiply", "divide"}, enum)
+
+		// Verify all required fields are preserved.
+		require.Len(t, result.OfTool.InputSchema.Required, 3)
+		require.Contains(t, result.OfTool.InputSchema.Required, "a")
+		require.Contains(t, result.OfTool.InputSchema.Required, "b")
+		require.Contains(t, result.OfTool.InputSchema.Required, "operation")
+	})
+
+	t.Run("converts tool with no required fields", func(t *testing.T) {
+		t.Parallel()
+
+		tool := providers.Tool{
+			Type: "function",
+			Function: providers.Function{
+				Name:        "optional_params",
+				Description: "A tool with optional parameters.",
+				Parameters: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"optional_field": map[string]any{
+							"type":        "string",
+							"description": "An optional field",
+						},
+					},
+					// No "required" field.
+				},
+			},
+		}
+		result, err := convertTool(tool)
+
+		require.NoError(t, err)
+		require.NotNil(t, result.OfTool)
+		require.Equal(t, "optional_params", result.OfTool.Name)
+		require.Empty(t, result.OfTool.InputSchema.Required)
+	})
+
+	t.Run("converts tool with empty parameters", func(t *testing.T) {
+		t.Parallel()
+
+		tool := testutil.DateTool()
+		result, err := convertTool(tool)
+
+		require.NoError(t, err)
+		require.NotNil(t, result.OfTool)
+		require.Equal(t, "get_current_date", result.OfTool.Name)
+		require.Equal(t, "object", string(result.OfTool.InputSchema.Type))
+	})
+
+	t.Run("returns error for invalid required field type", func(t *testing.T) {
+		t.Parallel()
+
+		tool := providers.Tool{
+			Type: "function",
+			Function: providers.Function{
+				Name:        "bad_tool",
+				Description: "A tool with invalid required field.",
+				Parameters: map[string]any{
+					"type":       "object",
+					"properties": map[string]any{},
+					"required":   123, // Invalid type.
+				},
+			},
+		}
+		_, err := convertTool(tool)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "bad_tool")
+		require.Contains(t, err.Error(), "invalid required field")
+	})
+
+	t.Run("returns error for non-string element in required array", func(t *testing.T) {
+		t.Parallel()
+
+		tool := providers.Tool{
+			Type: "function",
+			Function: providers.Function{
+				Name:        "mixed_required",
+				Description: "A tool with mixed types in required.",
+				Parameters: map[string]any{
+					"type":       "object",
+					"properties": map[string]any{},
+					"required":   []any{"valid", 42, "also_valid"}, // Mixed types.
+				},
+			},
+		}
+		_, err := convertTool(tool)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "mixed_required")
+		require.Contains(t, err.Error(), "element 1")
+	})
+}
+
 func TestThinkingBudget(t *testing.T) {
 	t.Parallel()
 
@@ -572,6 +730,71 @@ func TestThinkingBudget(t *testing.T) {
 			require.Equal(t, tc.expected, budget)
 		})
 	}
+}
+
+func TestToStringSlice(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns []string input unchanged", func(t *testing.T) {
+		t.Parallel()
+
+		input := []string{"a", "b", "c"}
+		result, err := toStringSlice(input)
+
+		require.NoError(t, err)
+		require.Equal(t, input, result)
+	})
+
+	t.Run("converts []any with all strings", func(t *testing.T) {
+		t.Parallel()
+
+		input := []any{"x", "y", "z"}
+		result, err := toStringSlice(input)
+
+		require.NoError(t, err)
+		require.Equal(t, []string{"x", "y", "z"}, result)
+	})
+
+	t.Run("converts empty []any to empty []string", func(t *testing.T) {
+		t.Parallel()
+
+		input := []any{}
+		result, err := toStringSlice(input)
+
+		require.NoError(t, err)
+		require.Empty(t, result)
+	})
+
+	t.Run("returns error for []any with non-string element", func(t *testing.T) {
+		t.Parallel()
+
+		input := []any{"valid", 42, "another"}
+		_, err := toStringSlice(input)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "element 1")
+		require.Contains(t, err.Error(), "expected string")
+		require.Contains(t, err.Error(), "int")
+	})
+
+	t.Run("returns error for unexpected type", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := toStringSlice(123)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "expected []string or []any")
+		require.Contains(t, err.Error(), "int")
+	})
+
+	t.Run("returns error for nil input", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := toStringSlice(nil)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "expected []string or []any")
+	})
 }
 
 // Integration tests - only run if API key is available.
@@ -727,6 +950,142 @@ func TestIntegrationCompletionWithToolsParallelDisabled(t *testing.T) {
 	require.Len(t, resp.Choices, 1)
 }
 
+func TestIntegrationAgentLoop(t *testing.T) {
+	t.Parallel()
+
+	if testutil.SkipIfNoAPIKey("anthropic") {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	provider, err := New()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	tools := []providers.Tool{testutil.WeatherTool()}
+
+	// Step 1: Send initial message asking about weather.
+	messages := []providers.Message{
+		{Role: providers.RoleUser, Content: "What is the weather in Paris? Use the get_weather tool."},
+	}
+
+	resp, err := provider.Completion(ctx, providers.CompletionParams{
+		Model:      testutil.TestModel("anthropic"),
+		Messages:   messages,
+		Tools:      tools,
+		ToolChoice: "auto",
+	})
+	require.NoError(t, err)
+	require.Len(t, resp.Choices, 1)
+
+	// Step 2: Verify the model called the tool.
+	require.NotEmpty(t, resp.Choices[0].Message.ToolCalls, "expected model to call get_weather tool")
+	require.Equal(t, providers.FinishReasonToolCalls, resp.Choices[0].FinishReason)
+
+	tc := resp.Choices[0].Message.ToolCalls[0]
+	require.Equal(t, "get_weather", tc.Function.Name)
+	require.NotEmpty(t, tc.ID)
+
+	// Step 3: Parse the arguments - this verifies parameters were sent correctly.
+	var args struct {
+		Location string `json:"location"`
+	}
+	err = json.Unmarshal([]byte(tc.Function.Arguments), &args)
+	require.NoError(t, err, "tool arguments should be valid JSON")
+	require.NotEmpty(t, args.Location, "location argument should be present")
+	require.Contains(t, strings.ToLower(args.Location), "paris")
+
+	// Step 4: Add assistant message with tool call and tool result.
+	messages = append(messages, resp.Choices[0].Message)
+	messages = append(messages, providers.Message{
+		Role:       providers.RoleTool,
+		Content:    testutil.MockWeatherResult(t, args.Location),
+		ToolCallID: tc.ID,
+	})
+
+	// Step 5: Continue conversation with tool result.
+	resp, err = provider.Completion(ctx, providers.CompletionParams{
+		Model:    testutil.TestModel("anthropic"),
+		Messages: messages,
+		Tools:    tools,
+	})
+	require.NoError(t, err)
+	require.Len(t, resp.Choices, 1)
+
+	// Step 6: Verify the model produced a final response.
+	require.Equal(t, providers.FinishReasonStop, resp.Choices[0].FinishReason)
+	contentStr, ok := resp.Choices[0].Message.Content.(string)
+	require.True(t, ok, "expected string content in final response")
+	require.NotEmpty(t, contentStr)
+}
+
+func TestIntegrationAgentLoopMultipleParams(t *testing.T) {
+	t.Parallel()
+
+	if testutil.SkipIfNoAPIKey("anthropic") {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	provider, err := New()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	tools := []providers.Tool{testutil.NewTestCalculatorTool(t)}
+
+	// Ask the model to use the calculator with specific values.
+	messages := []providers.Message{
+		{Role: providers.RoleUser, Content: "Use the calculate tool to add 15 and 27 together."},
+	}
+
+	resp, err := provider.Completion(ctx, providers.CompletionParams{
+		Model:      testutil.TestModel("anthropic"),
+		Messages:   messages,
+		Tools:      tools,
+		ToolChoice: "auto",
+	})
+	require.NoError(t, err)
+	require.Len(t, resp.Choices, 1)
+
+	// Verify the model called the tool with correct parameters.
+	require.NotEmpty(t, resp.Choices[0].Message.ToolCalls, "expected model to call calculate tool")
+
+	tc := resp.Choices[0].Message.ToolCalls[0]
+	require.Equal(t, "calculate", tc.Function.Name)
+
+	// Parse and verify all required parameters are present.
+	var args struct {
+		A         float64 `json:"a"`
+		B         float64 `json:"b"`
+		Operation string  `json:"operation"`
+	}
+	err = json.Unmarshal([]byte(tc.Function.Arguments), &args)
+	require.NoError(t, err, "tool arguments should be valid JSON")
+
+	// Verify the parameters - this catches "wrong order" bugs.
+	require.Equal(t, 15.0, args.A, "first operand should be 15")
+	require.Equal(t, 27.0, args.B, "second operand should be 27")
+	require.Equal(t, "add", args.Operation, "operation should be 'add'")
+
+	// Complete the agent loop with tool result.
+	messages = append(messages, resp.Choices[0].Message)
+	messages = append(messages, providers.Message{
+		Role:       providers.RoleTool,
+		Content:    testutil.MockCalculatorResult(t, args.A, args.B, args.Operation),
+		ToolCallID: tc.ID,
+	})
+
+	resp, err = provider.Completion(ctx, providers.CompletionParams{
+		Model:    testutil.TestModel("anthropic"),
+		Messages: messages,
+		Tools:    tools,
+	})
+	require.NoError(t, err)
+
+	// Verify final response mentions the result.
+	contentStr, ok := resp.Choices[0].Message.Content.(string)
+	require.True(t, ok)
+	require.Contains(t, contentStr, "42")
+}
+
 func TestIntegrationCompletionConversation(t *testing.T) {
 	t.Parallel()
 
@@ -792,7 +1151,7 @@ func TestIntegrationCompletionReasoning(t *testing.T) {
 	}
 }
 
-func TestIntegrationAgentLoop(t *testing.T) {
+func TestIntegrationAgentLoopContinuation(t *testing.T) {
 	t.Parallel()
 
 	if testutil.SkipIfNoAPIKey("anthropic") {

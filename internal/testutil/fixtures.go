@@ -2,7 +2,9 @@
 package testutil
 
 import (
+	"fmt"
 	"os"
+	"testing"
 	"time"
 
 	"github.com/mozilla-ai/any-llm-go/config"
@@ -179,6 +181,74 @@ func DateTool() providers.Tool {
 			},
 		},
 	}
+}
+
+// NewTestCalculatorTool returns a calculator tool with multiple parameters for testing.
+// This tool is useful for verifying that parameter order and required fields
+// are correctly preserved during conversion.
+func NewTestCalculatorTool(t *testing.T) providers.Tool {
+	t.Helper()
+
+	return providers.Tool{
+		Type: "function",
+		Function: providers.Function{
+			Name:        "calculate",
+			Description: "Perform a mathematical calculation on two numbers.",
+			Parameters: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"a": map[string]any{
+						"type":        "number",
+						"description": "The first operand",
+					},
+					"b": map[string]any{
+						"type":        "number",
+						"description": "The second operand",
+					},
+					"operation": map[string]any{
+						"type":        "string",
+						"description": "The operation to perform",
+						"enum":        []string{"add", "subtract", "multiply", "divide"},
+					},
+				},
+				"required": []string{"a", "b", "operation"},
+			},
+		},
+	}
+}
+
+// MockWeatherResult returns a mock weather result for testing agent loops.
+func MockWeatherResult(t *testing.T, location string) string {
+	t.Helper()
+
+	return `{"location": "` + location + `", "temperature": 22, "unit": "celsius", "condition": "sunny"}`
+}
+
+// MockCalculatorResult returns a mock calculator result for testing agent loops.
+func MockCalculatorResult(t *testing.T, a float64, b float64, operation string) string {
+	t.Helper()
+
+	var result float64
+	switch operation {
+	case "add":
+		result = a + b
+	case "subtract":
+		result = a - b
+	case "multiply":
+		result = a * b
+	case "divide":
+		if b != 0 {
+			result = a / b
+		}
+	}
+
+	var formatted string
+	if result == float64(int(result)) {
+		formatted = fmt.Sprintf("%.0f", result)
+	} else {
+		formatted = fmt.Sprintf("%g", result)
+	}
+	return `{"result": ` + formatted + `}`
 }
 
 // HasAPIKey checks if the API key environment variable is set for a provider.
