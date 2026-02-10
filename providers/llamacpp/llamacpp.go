@@ -11,7 +11,7 @@ import (
 const (
 	defaultBaseURL = "http://127.0.0.1:8080/v1"
 	providerName   = "llamacpp"
-	dummyAPIKey    = "llama-cpp-dummy-key"
+	defaultAPIKey  = "llama-cpp-dummy-key"
 )
 
 var (
