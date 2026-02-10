@@ -9,7 +9,9 @@ any-llm-go supports multiple LLM providers through a unified interface. Each pro
 | [Anthropic](#anthropic) | `anthropic` |     ✅      |     ✅     |   ✅   |     ✅     |     ❌      |      ❌      |
 | [DeepSeek](#deepseek)   | `deepseek`  |     ✅      |     ✅     |   ✅   |     ✅     |     ❌      |      ✅      |
 | [Gemini](#gemini)       | `gemini`    |     ✅      |     ✅     |   ✅   |     ✅     |     ✅      |      ✅      |
+| [Groq](#groq)           | `groq`      |     ✅      |     ✅     |   ✅   |     ❌     |     ❌      |      ✅      |
 | [Llamafile](#llamafile) | `llamafile` |     ✅      |     ✅     |   ✅   |     ❌     |     ✅      |      ✅      |
+| [Mistral](#mistral)     | `mistral`   |     ✅      |     ✅     |   ✅   |     ✅     |     ✅      |      ✅      |
 | [Ollama](#ollama)       | `ollama`    |     ✅      |     ✅     |   ✅   |     ✅     |     ✅      |      ✅      |
 | [OpenAI](#openai)       | `openai`    |     ✅      |     ✅     |   ✅   |     ✅     |     ✅      |      ✅      |
 
@@ -145,6 +147,93 @@ response, err := provider.Completion(ctx, anyllm.CompletionParams{
 if response.Choices[0].Message.Reasoning != nil {
     fmt.Println("Thinking:", response.Choices[0].Message.Reasoning.Content)
 }
+```
+
+### Groq
+
+Groq provides fast inference through their cloud API. It exposes an OpenAI-compatible API.
+
+```go
+import (
+    anyllm "github.com/mozilla-ai/any-llm-go"
+    "github.com/mozilla-ai/any-llm-go/providers/groq"
+)
+
+// Using environment variable (GROQ_API_KEY).
+provider, err := groq.New()
+
+// Or with explicit API key.
+provider, err := groq.New(anyllm.WithAPIKey("gsk_..."))
+```
+
+**Environment Variable:** `GROQ_API_KEY`
+
+**Popular Models:**
+- `llama-3.1-8b-instant` - Fast and cost-effective
+- `llama-3.3-70b-versatile` - More capable model
+- `mixtral-8x7b-32768` - Mixtral with 32k context
+
+**Completion:**
+
+```go
+provider, _ := groq.New()
+resp, err := provider.Completion(ctx, anyllm.CompletionParams{
+    Model: "llama-3.1-8b-instant",
+    Messages: []anyllm.Message{
+        {Role: anyllm.RoleUser, Content: "Hello!"},
+    },
+})
+```
+
+### Mistral
+
+```go
+import (
+    anyllm "github.com/mozilla-ai/any-llm-go"
+    "github.com/mozilla-ai/any-llm-go/providers/mistral"
+)
+
+// Using environment variable (MISTRAL_API_KEY).
+provider, err := mistral.New()
+
+// Or with explicit API key.
+provider, err := mistral.New(anyllm.WithAPIKey("your-key"))
+```
+
+**Environment Variable:** `MISTRAL_API_KEY`
+
+**Popular Models:**
+- `mistral-small-latest` - Fast and cost-effective
+- `mistral-large-latest` - Most capable model
+- `mistral-medium-latest` - Balanced performance
+
+**Reasoning Models:**
+- `magistral-small-latest` - Fast reasoning model
+- `magistral-medium-latest` - More capable reasoning model
+
+**Embedding Models:**
+- `mistral-embed` - Text embeddings
+
+**Completion:**
+
+```go
+provider, _ := mistral.New()
+resp, err := provider.Completion(ctx, anyllm.CompletionParams{
+    Model: "mistral-small-latest",
+    Messages: []anyllm.Message{
+        {Role: anyllm.RoleUser, Content: "Hello!"},
+    },
+})
+```
+
+**Embeddings:**
+
+```go
+provider, _ := mistral.New()
+resp, err := provider.Embedding(ctx, anyllm.EmbeddingParams{
+    Model: "mistral-embed",
+    Input: "Hello, world!",
+})
 ```
 
 ### Llamafile
@@ -375,8 +464,6 @@ The following providers are planned for future releases:
 
 | Provider     | Status                                            |
 |--------------|---------------------------------------------------|
-| Mistral      | Planned                                           |
-| Groq         | Planned                                           |
 | Cohere       | Planned                                           |
 | Together AI  | Planned                                           |
 | AWS Bedrock  | Planned                                           |

@@ -18,7 +18,7 @@ var ProviderModelMap = map[string]string{
 	"mistral":    "mistral-small-latest",
 	"gemini":     "gemini-2.5-flash",
 	"cohere":     "command-r",
-	"groq":       "llama-3.1-8b-instant",
+	"groq":       "llama-3.3-70b-versatile",
 	"ollama":     "llama3.2",
 	"llamafile":  "LLaMA_CPP",
 	"together":   "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
@@ -43,10 +43,11 @@ var ProviderReasoningModelMap = map[string]string{
 
 // ProviderImageModelMap maps providers to vision-capable models.
 var ProviderImageModelMap = map[string]string{
-	"openai":    "gpt-4o-mini",
 	"anthropic": "claude-3-5-haiku-latest",
 	"gemini":    "gemini-2.5-flash",
+	"mistral":   "pixtral-small-latest",
 	"ollama":    "llava",
+	"openai":    "gpt-4o-mini",
 }
 
 // EmbeddingProviderModelMap maps providers to embedding models.
