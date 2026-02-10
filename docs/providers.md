@@ -277,6 +277,66 @@ for _, model := range models.Data {
 }
 ```
 
+### llama.cpp
+
+llama.cpp offers a local server compatible with the OpenAI API. No API key is required by default.
+
+```go
+import (
+    anyllm "github.com/mozilla-ai/any-llm-go"
+    "github.com/mozilla-ai/any-llm-go/providers/llamacpp"
+)
+
+// Using default settings (localhost:8080).
+provider, err := llamacpp.New()
+
+// Or with custom base URL.
+provider, err := llamacpp.New(anyllm.WithBaseURL("http://localhost:9090/v1"))
+```
+
+**Environment Variable:** ```LLAMACPP_API_BASE``` (optional, defaults to ```http://127.0.0.1:8080/v1```)
+
+**Popular Models:**
+
+- ```LLaMA_CPP``` - Default identifier used by the server.
+- Any GGUF model loaded into the server (the ```Model``` parameter is often ignored by llama.cpp if only one model is loaded).
+
+**Reasoning/Thinking:**
+
+llama.cpp supports reasoning for models that provide it (like DeepSeek-R1 GGUF):
+
+```go
+response, err := provider.Completion(ctx, anyllm.CompletionParams{
+    Model: "LLaMA_CPP",
+    Messages: messages,
+    ReasoningEffort: anyllm.ReasoningEffortMedium,
+})
+
+if response.Choices[0].Message.Reasoning != nil {
+    fmt.Println("Thinking:", response.Choices[0].Message.Reasoning.Content)
+}
+```
+
+**Embeddings:**
+
+```go
+provider, _ := llamacpp.New()
+resp, err := provider.Embedding(ctx, anyllm.EmbeddingParams{
+    Model: "LLaMA_CPP",
+    Input: "Hello, world!",
+})
+```
+
+**List Models:**
+
+```go
+provider, _ := llamacpp.New()
+models, err := provider.ListModels(ctx)
+for _, model := range models.Data {
+    fmt.Println(model.ID)
+}
+```
+
 ### OpenAI
 
 ```go
