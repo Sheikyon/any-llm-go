@@ -39,6 +39,14 @@ func New(opts ...config.Option) (*Provider, error) {
 		Capabilities:   llamacppCapabilities(),
 		DefaultBaseURL: defaultBaseURL,
 		Name:           providerName,
+	base, err := openai.NewCompatible(openai.CompatibleConfig{
+		APIKeyEnvVar:       "",
+		BaseURLEnvVar:      "",
+	    Capabilities:       llamacppCapabilities(),
+	    DefaultAPIKey:      defaultAPIKey,
+        DefaultBaseURL:     defaultBaseURL,
+		Name:               providerName,
+		RequireAPIKey:      false,
 	}, opts...)
 	if err != nil {
 		return nil, err
