@@ -294,8 +294,6 @@ provider, err := llamacpp.New()
 provider, err := llamacpp.New(anyllm.WithBaseURL("http://localhost:9090/v1"))
 ```
 
-**Environment Variable:** ```LLAMACPP_API_BASE``` (optional, defaults to ```http://127.0.0.1:8080/v1```)
-
 **Popular Models:**
 
 - ```LLaMA_CPP``` - Default identifier used by the server.
