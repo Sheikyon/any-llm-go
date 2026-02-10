@@ -39,7 +39,6 @@ func New(opts ...config.Option) (*Provider, error) {
 		Name:           providerName,
 		RequireAPIKey:  false,
 	}, opts...)
-
 	if err != nil {
 		return nil, err
 	}
