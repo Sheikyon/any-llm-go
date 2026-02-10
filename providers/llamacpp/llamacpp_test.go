@@ -46,7 +46,7 @@ func TestProviderName(t *testing.T) {
 
 	p, err := New()
 	require.NoError(t, err)
-	assert.Equal(t, providerName, p.Name())
+	require.Equal(t, providerName, p.Name())
 }
 
 // TestCapabilities confirms the provider advertises the expected feature set.
