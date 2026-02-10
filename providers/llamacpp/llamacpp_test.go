@@ -57,10 +57,10 @@ func TestCapabilities(t *testing.T) {
 	require.NoError(t, err)
 
 	caps := p.Capabilities()
-	assert.True(t, caps.Completion, "should support completion")
-	assert.True(t, caps.CompletionStreaming, "should support streaming")
-	assert.True(t, caps.Embedding, "should support embeddings")
-	assert.True(t, caps.ListModels, "should support listing models")
+	require.True(t, caps.Completion)
+	require.True(t, caps.CompletionStreaming)
+	require.True(t, caps.Embedding)
+	require.True(t, caps.ListModels)
 }
 
 // TestIntegration_Llamacpp runs real calls against a live llama.cpp server.
