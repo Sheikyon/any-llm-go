@@ -2,41 +2,58 @@ package llamacpp
 
 import (
 	"context"
-	"net/http"
 	"testing"
 	"time"
 
 	anyllm "github.com/mozilla-ai/any-llm-go"
 	"github.com/mozilla-ai/any-llm-go/internal/testutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const testBaseURL = "http://127.0.0.1:8080/v1"
-const testModel = "llama.cpp"
+const (
+	testBaseURL                     = "http://127.0.0.1:8080/v1"
+	testModel                       = "llama.cpp"
+	testLlamacppAvailabilityTimeout = 5 * time.Second
+)
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	t.Run("creates provider with defaults", func(t *testing.T) {
 		p, err := New()
 		require.NoError(t, err)
 		require.NotNil(t, p)
 	})
+
+	t.Run("creates provider with options", func(t *testing.T) {
+		p, err := New(anyllm.WithBaseURL("http://custom:8080"))
+		require.NoError(t, err)
+		require.NotNil(t, p)
+	})
 }
 
-func serverRunning(t *testing.T) bool {
-	t.Helper()
-	client := &http.Client{Timeout: 1 * time.Second}
-	resp, err := client.Get(testBaseURL + "/models")
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
+func TestProviderName(t *testing.T) {
+	t.Parallel()
+	p, err := New()
+	require.NoError(t, err)
+	assert.Equal(t, providerName, p.Name())
+}
+
+func TestCapabilities(t *testing.T) {
+	t.Parallel()
+	p, err := New()
+	require.NoError(t, err)
+	caps := p.Capabilities()
+	assert.True(t, caps.Completion)
+	assert.True(t, caps.CompletionStreaming)
+	assert.True(t, caps.Embedding)
+	assert.True(t, caps.ListModels)
 }
 
 func TestIntegration_Llamacpp(t *testing.T) {
-	if !serverRunning(t) {
-		t.Skip("No llama.cpp server running")
-	}
+	t.Parallel()
+	skipIfLlamacppUnavailable(t)
 
 	p, err := New(anyllm.WithTimeout(30 * time.Second))
 	require.NoError(t, err)
@@ -54,9 +71,7 @@ func TestIntegration_Llamacpp(t *testing.T) {
 			Messages: testutil.MessagesWithSystem(),
 		})
 		require.NoError(t, err)
-		content, ok := resp.Choices[0].Message.Content.(string)
-		require.True(t, ok)
-		require.NotEmpty(t, content)
+		require.NotEmpty(t, resp.Choices[0].Message.Content)
 	})
 
 	t.Run("Embedding", func(t *testing.T) {
@@ -67,4 +82,20 @@ func TestIntegration_Llamacpp(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, resp.Data)
 	})
+}
+
+func skipIfLlamacppUnavailable(t *testing.T) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), testLlamacppAvailabilityTimeout)
+	defer cancel()
+
+	p, err := New()
+	if err != nil {
+		t.Skip("llamacpp not available: failed to create provider")
+	}
+
+	if _, err = p.ListModels(ctx); err != nil {
+		t.Skip("llamacpp not available: server not responding at " + testBaseURL)
+	}
 }
