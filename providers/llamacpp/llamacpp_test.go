@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	anyllm "github.com/mozilla-ai/any-llm-go"
@@ -66,7 +65,7 @@ func TestCapabilities(t *testing.T) {
 // TestIntegration_Llamacpp runs real calls against a live llama.cpp server.
 //
 // Skipped automatically if no server is responding on the default port.
-func TestIntegration.(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	t.Parallel()
 
 	skipIfLlamacppUnavailable(t)
