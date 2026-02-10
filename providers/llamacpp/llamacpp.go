@@ -1,8 +1,6 @@
 package llamacpp
 
 import (
-	"os"
-
 	"github.com/mozilla-ai/any-llm-go/config"
 	"github.com/mozilla-ai/any-llm-go/providers"
 	"github.com/mozilla-ai/any-llm-go/providers/openai"
@@ -27,27 +25,21 @@ type Provider struct {
 }
 
 func New(opts ...config.Option) (*Provider, error) {
-
 	defaults := []config.Option{
-		config.WithAPIKey(dummyAPIKey),
+		config.WithAPIKey(defaultAPIKey),
 	}
 	opts = append(defaults, opts...)
 
 	base, err := openai.NewCompatible(openai.CompatibleConfig{
 		APIKeyEnvVar:   "",
-		RequireAPIKey:  false,
+		BaseURLEnvVar:  "",
 		Capabilities:   llamacppCapabilities(),
+		DefaultAPIKey:  defaultAPIKey,
 		DefaultBaseURL: defaultBaseURL,
 		Name:           providerName,
-	base, err := openai.NewCompatible(openai.CompatibleConfig{
-		APIKeyEnvVar:       "",
-		BaseURLEnvVar:      "",
-	    Capabilities:       llamacppCapabilities(),
-	    DefaultAPIKey:      defaultAPIKey,
-        DefaultBaseURL:     defaultBaseURL,
-		Name:               providerName,
-		RequireAPIKey:      false,
+		RequireAPIKey:  false,
 	}, opts...)
+
 	if err != nil {
 		return nil, err
 	}
