@@ -88,7 +88,8 @@ func TestIntegration_Llamacpp(t *testing.T) {
 			Messages: testutil.MessagesWithSystem(),
 		})
 		require.NoError(t, err)
-		require.NotEmpty(t, resp.Choices[0].Message.Content, "response should not be empty")
+		require.Len(t, resp.Choices, 1)
+		require.NotEmpty(t, resp.Choices[0].Message.Content)
 	})
 
 	t.Run("Embedding generates vectors", func(t *testing.T) {
