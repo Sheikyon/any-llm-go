@@ -11,7 +11,6 @@ import (
 const (
 	defaultBaseURL = "http://127.0.0.1:8080/v1"
 	providerName   = "llamacpp"
-	envBaseURL     = "LLAMACPP_API_BASE"
 	dummyAPIKey    = "llama-cpp-dummy-key"
 )
 
