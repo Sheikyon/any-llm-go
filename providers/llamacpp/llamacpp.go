@@ -17,6 +17,14 @@ const (
 	providerName   = "llamacpp"
 	defaultAPIKey  = "llama-cpp-dummy-key"
 )
+// Ensure Provider implements the required interfaces.
+var (
+	_ providers.CapabilityProvider = (*Provider)(nil)
+	_ providers.EmbeddingProvider  = (*Provider)(nil)
+	_ providers.ErrorConverter     = (*Provider)(nil)
+	_ providers.ModelLister        = (*Provider)(nil)
+	_ providers.Provider           = (*Provider)(nil)
+)
 
 // Provider is a thin wrapper around the generic OpenAI-compatible provider,
 // pre-configured with llama.cpp defaults and quirks.
