@@ -34,11 +34,6 @@ type Provider struct {
 
 // New returns a Provider that communicates with a llama.cpp server.
 func New(opts ...config.Option) (*Provider, error) {
-	// Always inject our dummy key unless the caller explicitly overrides it
-	defaults := []config.Option{
-		config.WithAPIKey(defaultAPIKey),
-	}
-	opts = append(defaults, opts...)
 
 	base, err := openai.NewCompatible(openai.CompatibleConfig{
 		APIKeyEnvVar:   "", // we don't read from env by default
