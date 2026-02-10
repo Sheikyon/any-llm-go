@@ -27,9 +27,6 @@ type Provider struct {
 }
 
 func New(opts ...config.Option) (*Provider, error) {
-	if url := os.Getenv(envBaseURL); url != "" {
-		opts = append([]config.Option{config.WithBaseURL(url)}, opts...)
-	}
 
 	defaults := []config.Option{
 		config.WithAPIKey(dummyAPIKey),
