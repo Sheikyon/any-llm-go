@@ -10,6 +10,7 @@ any-llm-go supports multiple LLM providers through a unified interface. Each pro
 | [DeepSeek](#deepseek)   | `deepseek`  |     ✅      |     ✅     |   ✅   |     ✅     |     ❌      |      ✅      |
 | [Gemini](#gemini)       | `gemini`    |     ✅      |     ✅     |   ✅   |     ✅     |     ✅      |      ✅      |
 | [Groq](#groq)           | `groq`      |     ✅      |     ✅     |   ✅   |     ❌     |     ❌      |      ✅      |
+| [llama.cpp](#llamacpp)   | `llamacpp`  |     ✅      |     ✅     |   ✅   |     ❌     |     ✅      |      ✅      |
 | [Llamafile](#llamafile) | `llamafile` |     ✅      |     ✅     |   ✅   |     ❌     |     ✅      |      ✅      |
 | [Mistral](#mistral)     | `mistral`   |     ✅      |     ✅     |   ✅   |     ✅     |     ✅      |      ✅      |
 | [Ollama](#ollama)       | `ollama`    |     ✅      |     ✅     |   ✅   |     ✅     |     ✅      |      ✅      |
