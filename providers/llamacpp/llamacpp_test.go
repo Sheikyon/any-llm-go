@@ -12,9 +12,6 @@ import (
 )
 
 const (
-	// testBaseURL points to the default llama-server localhost endpoint
-	testBaseURL = "http://127.0.0.1:8080/v1"
-
 	// testModel is the name typically returned by /v1/models when only one model is loaded
 	testModel = "llama.cpp"
 
