@@ -35,7 +35,6 @@ type Provider struct {
 
 // New returns a Provider that communicates with a llama.cpp server.
 func New(opts ...config.Option) (*Provider, error) {
-
 	base, err := openai.NewCompatible(openai.CompatibleConfig{
 		APIKeyEnvVar:   "", // we don't read from env by default
 		BaseURLEnvVar:  "",
