@@ -113,6 +113,6 @@ func skipIfLlamacppUnavailable(t *testing.T) {
 	}
 
 	if _, err = p.ListModels(ctx); err != nil {
-		t.Skipf("llamacpp not available: server not responding at %s (error: %v)", testBaseURL, err)
+		t.Skipf("llamacpp not available: server not responding at %s (error: %v)", defaultBaseURL, err)
 	}
 }
