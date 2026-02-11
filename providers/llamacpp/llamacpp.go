@@ -17,6 +17,7 @@ const (
 	providerName   = "llamacpp"
 	defaultAPIKey  = "llama-cpp-dummy-key"
 )
+
 // Ensure Provider implements the required interfaces.
 var (
 	_ providers.CapabilityProvider = (*Provider)(nil)
