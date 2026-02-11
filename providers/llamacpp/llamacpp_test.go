@@ -62,7 +62,7 @@ func TestCapabilities(t *testing.T) {
 	require.True(t, caps.ListModels)
 }
 
-// TestIntegration_Llamacpp runs real calls against a live llama.cpp server.
+// TestIntegration runs real calls against a live llama.cpp server.
 //
 // Skipped automatically if no server is responding on the default port.
 func TestIntegration(t *testing.T) {
